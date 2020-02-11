@@ -1,0 +1,8 @@
+Info icon: Human o2
+https://www.iconfinder.com/iconsets/humano2#readme
+
+Warn icon: Function icons
+https://www.iconfinder.com/iconsets/function_icon_set#readme
+
+Error icon: One bit
+https://www.iconfinder.com/iconsets/onebit#readme
