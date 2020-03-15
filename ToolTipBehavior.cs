@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
@@ -38,6 +38,23 @@ namespace Hardcodet.ToolTips
 				SetValue(ContentProperty, value);
 			}
 		}
+
+
+		[Description("Tooltip parent object if true associated object will be used.")]
+		[Category("Common")]
+		[DisplayName("Tooltip Parent")]
+		[Bindable(true)]
+		public bool AssociatedObjectPlacementTarget
+		{
+			get { return (bool)GetValue(AssociatedObjectPlacementTargetProperty); }
+			set { SetValue(AssociatedObjectPlacementTargetProperty, value); }
+		}
+
+		// Using a DependencyProperty as the backing store for AssociatedObjectPlacementTarget.  This enables animation, styling, binding, etc...
+		public static readonly DependencyProperty AssociatedObjectPlacementTargetProperty =
+			DependencyProperty.Register("AssociatedObjectPlacementTarget", typeof(bool), typeof(ToolTipBehavior), new FrameworkPropertyMetadata(true,FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+
+
 
 		public static readonly DependencyProperty TagProperty = DependencyProperty.Register("Tag", typeof(object), typeof(ToolTipBehavior), new FrameworkPropertyMetadata());
 		[Description("Bind another property.")]
@@ -194,7 +211,6 @@ namespace Hardcodet.ToolTips
 		{
 			var target = (ToolTipBehavior)d;
 			if (target.toolTip == null) return;
-
 			target.toolTip.IsHitTestVisible = target.IsInteractive;
 		}
 
@@ -323,6 +339,20 @@ namespace Hardcodet.ToolTips
 
 		public static readonly DependencyProperty PopupMousePositionProperty = DependencyProperty.Register("PopupMousePosition", typeof(PlacementMode), typeof(ToolTipBehavior), new FrameworkPropertyMetadata(PlacementMode.Mouse, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
 
+
+		[Bindable(true)]
+		[DisplayName("PlacementRectangle")]
+		[Description("Set popup placement rectangle.")]
+		public Rect PopupPlacementRectangle
+		{
+			get { return (Rect)GetValue(PopupPlacementRectangleProperty); }
+			set { SetValue(PopupPlacementRectangleProperty, value); }
+		}
+
+		// Using a DependencyProperty as the backing store for PopupPlacementRectangle.  This enables animation, styling, binding, etc...
+		public static readonly DependencyProperty PopupPlacementRectangleProperty =
+			DependencyProperty.Register("PopupPlacementRectangle", typeof(Rect), typeof(ToolTipBehavior), new FrameworkPropertyMetadata(System.Windows.Rect.Empty,FrameworkPropertyMetadataOptions.AffectsRender));
+
 		public ToolTipBehavior()
 		{
 			timer = new DispatcherTimer(TimeSpan.FromMilliseconds(Delay), DispatcherPriority.Normal, OnTimerElapsed, Dispatcher)
@@ -338,12 +368,17 @@ namespace Hardcodet.ToolTips
 
 			popup = new Popup
 			{
-				PlacementTarget = AssociatedObject,
+				PlacementRectangle=PopupPlacementRectangle,
 				Placement = PopupMousePosition,
 				HorizontalOffset = 5,
 				VerticalOffset = 5,
 				AllowsTransparency = true
 			};
+			if (AssociatedObjectPlacementTarget)
+			{
+				popup.PlacementTarget = AssociatedObject;
+			}
+
 
 			popup.MouseEnter += OnPopupMouseEnter;
 			popup.MouseLeave += OnPopupMouseLeave;
@@ -442,14 +477,23 @@ namespace Hardcodet.ToolTips
 
 				Schedule(() => { });
 				VisualStateManager.GoToState(toolTip, "Showing", true);
+
 			}
 			else
 			{
 				Schedule(() =>
 				{
 					popup.IsOpen = true;
+					if (!IsInteractive)
+					{
+						VisualStateManager.GoToState(toolTip, "Active", true);
 
-					VisualStateManager.GoToState(toolTip, "Showing", true);
+					}
+					else
+					{
+						VisualStateManager.GoToState(toolTip, "Showing", true);
+
+					}
 				});
 			}
 		}
@@ -457,8 +501,7 @@ namespace Hardcodet.ToolTips
 		private void OnPopupMouseEnter(object sender, MouseEventArgs e)
 		{
 			timer.Stop();
-			VisualStateManager.GoToState(toolTip, "Active", true);
-
+			VisualStateManager.GoToState(toolTip, "Active", true); //the popup is still open
 			var parentWindow = Window.GetWindow(AssociatedObject);
 			if (parentWindow != null)
 			{
